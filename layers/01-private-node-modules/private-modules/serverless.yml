@@ -1,0 +1,13 @@
+service: private-modules
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+layers:
+  PrivateModules:
+    path: layer
+    compatibleRuntimes:
+      - nodejs18.x
