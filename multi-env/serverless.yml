@@ -1,0 +1,33 @@
+service: multi-env
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'prod'}
+  environment: ${file(./config/env.${self:provider.stage}.json)}
+  iam:
+    role:
+      statements: ${file(./config/serverless/db.iam.role.yaml)}
+
+custom:
+  schedulerRate: rate(1 minute)
+  enabled: true
+  tableName: ${self:provider.environment.DB_TABLE_NAME}
+  dbWriteCapacityUnits: ${self:provider.environment.DB_WRITE_CAPACITY_UNITS}
+  dbReadCapacityUnits: ${self:provider.environment.DB_READ_CAPACITY_UNITS}
+
+functions:
+  scheduler:
+    handler: src/handler.scheduler
+    events:
+      - schedule:
+          rate: ${self:custom.schedulerRate}
+          name: schedule-commit-message-${self:provider.stage}
+          description: get commit messages every minute
+          enabled: ${self:custom.enabled}
+
+resources:
+  Resources: ${file(./config/serverless/resources/dynamo.commit-messages.table.yaml)}
